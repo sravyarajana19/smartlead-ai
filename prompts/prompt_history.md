@@ -787,3 +787,6 @@ Start implementing now.
 | Date / Iteration | Prompt / Instruction Summary | Model Used | Reviewer | Action Taken / Changes Made | Automated Verification |
 |---|---|---|---|---|---|
 | 2026-10-31 00:42 UTC | Initial Project Prompt (Full Technical Assessment specification) | Gemini 3.8 Flash (High) | Antigravity AI Agent | Initial setup, full stack scaffolding, data modeling, generator, ML, FastAPI, Streamlit, Pytest test suite, and docs generation | Executed pytest suite, FastAPI endpoint probing, and Streamlit execution |
+| 2026-10-31 05:43 UTC | Usage instructions request ("just tell me here what are the steps to use this") | Gemini 3.8 Flash (High) | Candidate & Antigravity | Provided exact quick-start CLI execution steps for Streamlit, FastAPI, and test runner | Verified live ports (8000, 8501) |
+| 2026-10-31 12:33 UTC | Deployment & Git repository inquiry | Gemini 3.8 Flash (High) | Candidate & Antigravity | Created Dockerfile, docker-compose.yml, initialized Git repo, and provided Streamlit Cloud / Docker deployment options | Git commit on main branch verified |
+| 2026-10-31 13:32 UTC | Remote Git URL correction & YottaFlex guidelines audit | Gemini 3.8 Flash (High) | Candidate & Antigravity | Fixed duplicate URL in git remote, audited submission requirements against YottaFlex FAQ & Guidelines PDFs | Remote URL and audit verified |
