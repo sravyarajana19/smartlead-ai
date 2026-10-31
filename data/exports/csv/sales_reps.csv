@@ -1,0 +1,41 @@
+id,name,email,territory,product_specialization,is_active,capacity,current_load,created_at,updated_at
+REP-000001,Marcus Vance,marcus.vance1@smartlead.ai,North America,Enterprise Suite,True,40,8796,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000002,Elena Rostova,elena.rostova2@smartlead.ai,EMEA,Cloud Platform,True,40,6012,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000003,Hiroshi Tanaka,hiroshi.tanaka3@smartlead.ai,APAC,Security Shield,True,75,3220,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000004,Camila Santos,camila.santos4@smartlead.ai,LATAM,AI Analytics,True,40,1972,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000005,David Chen,david.chen5@smartlead.ai,North America,Enterprise Suite,True,50,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000006,Sarah Jenkins,sarah.jenkins6@smartlead.ai,EMEA,Cloud Platform,True,60,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000007,Amara Okafor,amara.okafor7@smartlead.ai,APAC,Security Shield,True,50,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000008,Liam O'Connor,liam.oconnor8@smartlead.ai,LATAM,AI Analytics,True,60,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000009,Sophia Martinez,sophia.martinez9@smartlead.ai,North America,Enterprise Suite,True,60,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000010,Julian Meyer,julian.meyer10@smartlead.ai,EMEA,Cloud Platform,True,50,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000011,Aisha Al-Mansoor,aisha.al-mansoor11@smartlead.ai,APAC,Security Shield,True,60,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000012,Lucas Silva,lucas.silva12@smartlead.ai,LATAM,AI Analytics,True,60,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000013,Priya Sharma,priya.sharma13@smartlead.ai,North America,Enterprise Suite,True,40,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000014,Benjamin Becker,benjamin.becker14@smartlead.ai,EMEA,Cloud Platform,True,40,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000015,Chloe Dubois,chloe.dubois15@smartlead.ai,APAC,Security Shield,False,60,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000016,Klaus Fischer,klaus.fischer16@smartlead.ai,LATAM,AI Analytics,True,50,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000017,Erin Riley,erin.riley17@smartlead.ai,North America,Enterprise Suite,True,60,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000018,Melissa Williams,melissa.williams18@smartlead.ai,EMEA,Cloud Platform,True,50,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000019,Madison Hall,madison.hall19@smartlead.ai,APAC,Security Shield,True,60,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000020,Aaron Petersen,aaron.petersen20@smartlead.ai,LATAM,AI Analytics,True,60,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000021,David Gonzalez,david.gonzalez21@smartlead.ai,North America,Enterprise Suite,True,60,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000022,Kyle Miles,kyle.miles22@smartlead.ai,EMEA,Cloud Platform,True,40,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000023,Diane Rodriguez,diane.rodriguez23@smartlead.ai,APAC,Security Shield,True,50,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000024,James Hernandez,james.hernandez24@smartlead.ai,LATAM,AI Analytics,True,50,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000025,Darrell Garza,darrell.garza25@smartlead.ai,North America,Enterprise Suite,True,75,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000026,Adam Wilson,adam.wilson26@smartlead.ai,EMEA,Cloud Platform,True,50,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000027,Donald Bailey,donald.bailey27@smartlead.ai,APAC,Security Shield,True,60,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000028,Brian Bass,brian.bass28@smartlead.ai,LATAM,AI Analytics,True,75,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000029,Eddie Ellis,eddie.ellis29@smartlead.ai,North America,Enterprise Suite,True,60,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000030,Ruth Hart,ruth.hart30@smartlead.ai,EMEA,Cloud Platform,False,75,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000031,William Palmer,william.palmer31@smartlead.ai,APAC,Security Shield,True,50,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000032,Cody Thompson,cody.thompson32@smartlead.ai,LATAM,AI Analytics,True,50,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000033,Christina Butler,christina.butler33@smartlead.ai,North America,Enterprise Suite,True,40,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000034,Christopher Bryant,christopher.bryant34@smartlead.ai,EMEA,Cloud Platform,True,50,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000035,Kathy Williams,kathy.williams35@smartlead.ai,APAC,Security Shield,True,40,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000036,Melissa Bradshaw,melissa.bradshaw36@smartlead.ai,LATAM,AI Analytics,True,60,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000037,Jared Brown,jared.brown37@smartlead.ai,North America,Enterprise Suite,True,75,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000038,Charles Davis,charles.davis38@smartlead.ai,EMEA,Cloud Platform,True,60,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000039,William Smith,william.smith39@smartlead.ai,APAC,Security Shield,True,75,0,2025-01-15T08:30:00,2025-01-15T08:30:00
+REP-000040,Charles Robinson,charles.robinson40@smartlead.ai,LATAM,AI Analytics,True,60,0,2025-01-15T08:30:00,2025-01-15T08:30:00

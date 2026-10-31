@@ -1,0 +1,31 @@
+id,name,campaign_type,channel,budget,start_date,end_date,target_territory,target_product,status,created_at
+CMP-000001,Q1 Cloud Summit 2025,Product Launch,Email,9609.0,2025-11-12,2026-01-18,EMEA,Cloud Platform,Active,2025-11-12T09:00:00
+CMP-000002,Enterprise AI Webinar 2025,Search Ads,Email,10613.64,2025-04-01,2025-06-15,EMEA,Security Shield,Completed,2025-04-01T09:00:00
+CMP-000003,DevSecOps Whitepaper 2025,Partner Co-Marketing,Event,15126.9,2025-11-23,2026-02-14,EMEA,Cloud Platform,Active,2025-11-23T09:00:00
+CMP-000004,NextGen Security Launch 2025,Search Ads,Search,5483.94,2025-09-04,2025-10-17,North America,Security Shield,Completed,2025-09-04T09:00:00
+CMP-000005,Global Analytics Forum 2025,Email Blast,Web,10853.77,2025-03-19,2025-05-10,EMEA,Cloud Platform,Completed,2025-03-19T09:00:00
+CMP-000006,Spring Inbound Campaign 2025,Webinar,Event,26282.79,2025-08-03,2025-10-30,APAC,Enterprise Suite,Completed,2025-08-03T09:00:00
+CMP-000007,Tech Leaders Executive Breakfast 2025,Email Blast,Web,45493.73,2025-03-14,2025-05-22,North America,Cloud Platform,Completed,2025-03-14T09:00:00
+CMP-000008,Cloud Migration Masterclass 2025,Webinar,Web,40232.49,2025-07-17,2025-08-29,APAC,Cloud Platform,Completed,2025-07-17T09:00:00
+CMP-000009,Automated Ops Showcase 2025,Email Blast,Email,59071.66,2025-01-04,2025-02-07,LATAM,AI Analytics,Completed,2025-01-04T09:00:00
+CMP-000010,AI Innovation Series 2025,Search Ads,Web,39735.42,2025-11-03,2026-01-19,LATAM,Enterprise Suite,Active,2025-11-03T09:00:00
+CMP-000011,EMEA Enterprise Roundtable 2025,Whitepaper,Web,76674.67,2025-12-16,2026-01-17,EMEA,Security Shield,Active,2025-12-16T09:00:00
+CMP-000012,APAC Digital Transformation Expo 2025,Search Ads,Social,74448.65,2025-09-17,2025-12-03,APAC,AI Analytics,Completed,2025-09-17T09:00:00
+CMP-000013,Q1 Cloud Summit 2026,Webinar,Social,60251.58,2025-01-28,2025-03-06,North America,Enterprise Suite,Completed,2025-01-28T09:00:00
+CMP-000014,Enterprise AI Webinar 2026,Webinar,Search,53823.18,2025-12-17,2026-03-06,LATAM,Enterprise Suite,Active,2025-12-17T09:00:00
+CMP-000015,DevSecOps Whitepaper 2026,Partner Co-Marketing,Email,70352.52,2025-08-24,2025-10-14,APAC,AI Analytics,Completed,2025-08-24T09:00:00
+CMP-000016,NextGen Security Launch 2026,Product Launch,Social,53883.91,2025-05-24,2025-08-04,LATAM,Security Shield,Completed,2025-05-24T09:00:00
+CMP-000017,Global Analytics Forum 2026,Product Launch,Email,19341.62,2025-12-24,2026-03-15,EMEA,AI Analytics,Active,2025-12-24T09:00:00
+CMP-000018,Spring Inbound Campaign 2026,Whitepaper,Web,8633.53,2025-09-10,2025-11-07,LATAM,Security Shield,Completed,2025-09-10T09:00:00
+CMP-000019,Tech Leaders Executive Breakfast 2026,Search Ads,Email,84268.43,2025-11-18,2026-02-04,North America,AI Analytics,Active,2025-11-18T09:00:00
+CMP-000020,Cloud Migration Masterclass 2026,Search Ads,Email,19466.96,2025-07-22,2025-10-19,EMEA,Enterprise Suite,Completed,2025-07-22T09:00:00
+CMP-000021,Automated Ops Showcase 2026,Search Ads,Social,13484.47,2025-10-14,2025-12-15,LATAM,Security Shield,Completed,2025-10-14T09:00:00
+CMP-000022,AI Innovation Series 2026,Webinar,Event,70215.41,2025-01-11,2025-04-06,North America,Security Shield,Completed,2025-01-11T09:00:00
+CMP-000023,EMEA Enterprise Roundtable 2026,Search Ads,Event,48739.58,2025-12-12,2026-02-04,North America,Cloud Platform,Active,2025-12-12T09:00:00
+CMP-000024,APAC Digital Transformation Expo 2026,Whitepaper,Search,98539.05,2025-04-16,2025-07-03,North America,Cloud Platform,Completed,2025-04-16T09:00:00
+CMP-000025,Q1 Cloud Summit 2026,Whitepaper,Search,91233.04,2025-08-08,2025-11-05,APAC,Cloud Platform,Completed,2025-08-08T09:00:00
+CMP-000026,Enterprise AI Webinar 2026,Search Ads,Social,82095.15,2025-12-13,2026-02-02,North America,Enterprise Suite,Active,2025-12-13T09:00:00
+CMP-000027,DevSecOps Whitepaper 2026,Search Ads,Email,50074.77,2025-11-21,2026-01-19,North America,Security Shield,Active,2025-11-21T09:00:00
+CMP-000028,NextGen Security Launch 2026,Email Blast,Search,39748.45,2025-03-24,2025-05-23,APAC,Enterprise Suite,Completed,2025-03-24T09:00:00
+CMP-000029,Global Analytics Forum 2026,Whitepaper,Event,98063.22,2025-10-08,2025-12-11,EMEA,AI Analytics,Completed,2025-10-08T09:00:00
+CMP-000030,Spring Inbound Campaign 2026,Webinar,Search,53181.32,2025-09-18,2025-11-16,North America,Cloud Platform,Completed,2025-09-18T09:00:00

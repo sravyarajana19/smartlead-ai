@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  smartlead-backend:
+    build: .
+    command: python scripts/run_backend.py
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  smartlead-dashboard:
+    build: .
+    command: streamlit run dashboard/app.py --server.port 8501 --server.address 0.0.0.0
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - smartlead-backend
+    restart: unless-stopped

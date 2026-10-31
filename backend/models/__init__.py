@@ -1,0 +1,33 @@
+from backend.models.entities import (
+    Company,
+    Contact,
+    Campaign,
+    SalesRep,
+    Lead,
+    Activity,
+    Consent,
+    ScoreRule,
+    Task,
+    Opportunity,
+    StageHistory,
+    DuplicateRelationship,
+    AnomalyRecord,
+    ConsentHistory,
+)
+
+__all__ = [
+    "Company",
+    "Contact",
+    "Campaign",
+    "SalesRep",
+    "Lead",
+    "Activity",
+    "Consent",
+    "ScoreRule",
+    "Task",
+    "Opportunity",
+    "StageHistory",
+    "DuplicateRelationship",
+    "AnomalyRecord",
+    "ConsentHistory",
+]
