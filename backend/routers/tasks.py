@@ -61,14 +61,14 @@ def create_follow_up_task(task_in: TaskCreate, db: Session = Depends(get_db)):
             anm_count = db.query(AnomalyRecord).count()
             db_anom = AnomalyRecord(
                 id=generate_anomaly_id(anm_count + 1),
-                entity_type=anomaly["entity_type"],
-                entity_id=anomaly["entity_id"],
-                issue_type=anomaly["issue_type"],
-                severity=anomaly["severity"],
-                ground_truth_label=anomaly["ground_truth_label"],
-                expected_decision=anomaly["expected_decision"],
-                actual_decision=anomaly["actual_decision"],
-                explanation=anomaly["explanation"],
+                entity_type=anomaly.get("entity_type", "Task"),
+                entity_id=anomaly.get("entity_id", task_in.lead_id),
+                issue_type=anomaly.get("issue_type", "CASE_1_CONSENT_VIOLATION"),
+                severity=anomaly.get("severity", "Critical"),
+                ground_truth_label=anomaly.get("ground_truth_label", "OPT_OUT_CONTACTED"),
+                expected_decision=anomaly.get("expected_decision", "BLOCK_OUTREACH"),
+                actual_decision=anomaly.get("actual_decision", "CONTACT_ATTEMPTED"),
+                explanation=anomaly.get("explanation", error_msg),
             )
             db.add(db_anom)
             db.commit()

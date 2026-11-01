@@ -244,20 +244,28 @@ class ValidationEngine:
             res["check_details"].append({"check": "CASE 1: Consent Enforcement", "status": "PASSED"})
 
     def _check_case_2_temporal_leakage(self, res: Dict[str, Any]):
-        # Case 2: Activities occurring after conversion marked is_post_conversion or leaking into score
-        activities = self.db.query(Activity).filter(Activity.is_post_conversion == True).all()
-        res["total_records_checked"] += len(activities)
+        # Case 2: Activities occurring after conversion (derived from actual event timestamps)
+        post_conv_query = (
+            self.db.query(Activity.id)
+            .join(Lead, Activity.lead_id == Lead.id)
+            .filter(Lead.converted_date.isnot(None), Activity.activity_date > Lead.converted_date)
+            .all()
+        )
+        post_conv_ids = set(r[0] for r in post_conv_query)
+        flagged_ids = set(r[0] for r in self.db.query(Activity.id).filter(Activity.is_post_conversion == True).all())
+        all_case2_ids = sorted(list(post_conv_ids | flagged_ids))
+        res["total_records_checked"] += self.db.query(Activity).count()
 
-        if activities:
-            count = len(activities)
+        if all_case2_ids:
+            count = len(all_case2_ids)
             res["detected_anomalies"] += count
             res["case_breakdown"]["CASE_2_TEMPORAL_LEAKAGE"] = count
             res["check_details"].append({
                 "check": "CASE 2: Temporal Leakage Detection (Post-Conversion Activities)",
                 "status": "ANOMALY_DETECTED",
                 "detected_count": count,
-                "sample_entity_ids": [a.id for a in activities[:5]],
-                "action": "Flagged as temporal leakage; excluded from valid scoring pipeline.",
+                "sample_entity_ids": all_case2_ids[:5],
+                "action": "Flagged as temporal leakage; derived independently from activity and conversion timestamps.",
             })
         else:
             res["passed_checks"] += 1
@@ -290,40 +298,50 @@ class ValidationEngine:
             res["check_details"].append({"check": "CASE 3: Sales Routing", "status": "PASSED"})
 
     def _check_case_4_duplicate_opportunities(self, res: Dict[str, Any]):
-        # Case 4: Duplicate leads creating duplicate opportunities
-        dup_opps = self.db.query(Opportunity).filter(Opportunity.is_duplicate == True).all()
-        res["total_records_checked"] += len(dup_opps)
+        # Case 4: Duplicate leads creating duplicate opportunities (derived from canonical identity links)
+        dup_leads = set(r[0] for r in self.db.query(Lead.id).filter(Lead.canonical_lead_id.isnot(None)).all())
+        dup_opp_ids = set(r[0] for r in self.db.query(Opportunity.id).filter(Opportunity.lead_id.in_(dup_leads)).all())
+        flagged_opp_ids = set(r[0] for r in self.db.query(Opportunity.id).filter(Opportunity.is_duplicate == True).all())
+        all_case4_ids = sorted(list(dup_opp_ids | flagged_opp_ids))
+        res["total_records_checked"] += self.db.query(Opportunity).count()
 
-        if dup_opps:
-            count = len(dup_opps)
+        if all_case4_ids:
+            count = len(all_case4_ids)
             res["detected_anomalies"] += count
             res["case_breakdown"]["CASE_4_DUPLICATE_OPPORTUNITY"] = count
             res["check_details"].append({
                 "check": "CASE 4: Duplicate Opportunity Creation Detection",
                 "status": "ANOMALY_DETECTED",
                 "detected_count": count,
-                "sample_entity_ids": [o.id for o in dup_opps[:5]],
-                "action": "Preserved both canonical and duplicate opportunities for investigation.",
+                "sample_entity_ids": all_case4_ids[:5],
+                "action": "Preserved both canonical and duplicate opportunities; derived from canonical identity links.",
             })
         else:
             res["passed_checks"] += 1
             res["check_details"].append({"check": "CASE 4: Duplicate Opportunities", "status": "PASSED"})
 
     def _check_case_5_stage_history(self, res: Dict[str, Any]):
-        # Case 5: Missing stage transitions
-        invalid_histories = self.db.query(StageHistory).filter(StageHistory.is_valid_transition == False).all()
-        res["total_records_checked"] += len(invalid_histories)
+        # Case 5: Missing stage transitions (derived from allowed state machine transitions)
+        from backend.services.opportunity_service import ALLOWED_TRANSITIONS
+        all_histories = self.db.query(StageHistory).all()
+        res["total_records_checked"] += len(all_histories)
 
-        if invalid_histories:
-            count = len(invalid_histories)
+        fact_invalid_ids = []
+        for h in all_histories:
+            allowed = ALLOWED_TRANSITIONS.get(h.from_stage, [])
+            if h.to_stage not in allowed or h.is_valid_transition is False:
+                fact_invalid_ids.append(h.id)
+
+        if fact_invalid_ids:
+            count = len(fact_invalid_ids)
             res["detected_anomalies"] += count
             res["case_breakdown"]["CASE_5_MISSING_STAGE_TRANSITION"] = count
             res["check_details"].append({
                 "check": "CASE 5: Opportunity Stage History Lifecycle Transition Integrity",
                 "status": "ANOMALY_DETECTED",
                 "detected_count": count,
-                "sample_entity_ids": [h.id for h in invalid_histories[:5]],
-                "action": "Detected invalid or missing stage transitions in lifecycle history.",
+                "sample_entity_ids": fact_invalid_ids[:5],
+                "action": "Detected invalid or missing stage transitions; derived from state machine flow rules.",
             })
         else:
             res["passed_checks"] += 1

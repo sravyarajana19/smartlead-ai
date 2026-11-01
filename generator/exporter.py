@@ -39,11 +39,13 @@ class DataExporter:
     def export_csv(self):
         """Export each entity list to a dedicated CSV file."""
         for entity_name, records in self.data.items():
-            if not records:
-                continue
             csv_path = CSV_EXPORTS_DIR / f"{entity_name}.csv"
-            fieldnames = list(records[0].keys())
+            if not records:
+                if csv_path.exists():
+                    csv_path.unlink()
+                continue
 
+            fieldnames = list(records[0].keys())
             with open(csv_path, mode="w", newline="", encoding="utf-8") as f:
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
@@ -56,23 +58,31 @@ class DataExporter:
                             row[k] = v
                     writer.writerow(row)
 
+        anom_path = CSV_EXPORTS_DIR / "anomaly_records.csv"
         if self.anomalies:
-            anom_path = CSV_EXPORTS_DIR / "anomaly_records.csv"
             with open(anom_path, mode="w", newline="", encoding="utf-8") as f:
                 writer = csv.DictWriter(f, fieldnames=list(self.anomalies[0].keys()))
                 writer.writeheader()
                 writer.writerows(self.anomalies)
+        elif anom_path.exists():
+            anom_path.unlink()
 
     def export_json(self):
         """Export each entity list to a JSON file."""
         for entity_name, records in self.data.items():
             json_path = JSON_EXPORTS_DIR / f"{entity_name}.json"
+            if not records and json_path.exists():
+                json_path.unlink()
+                continue
             with open(json_path, mode="w", encoding="utf-8") as f:
                 json.dump(records, f, indent=2, default=json_serializer)
 
+        anom_path = JSON_EXPORTS_DIR / "anomaly_records.json"
         if self.anomalies:
-            anom_path = JSON_EXPORTS_DIR / "anomaly_records.json"
             with open(anom_path, mode="w", encoding="utf-8") as f:
+                json.dump(self.anomalies, f, indent=2, default=json_serializer)
+        elif anom_path.exists():
+            anom_path.unlink()
                 json.dump(self.anomalies, f, indent=2, default=json_serializer)
 
     def export_sql(self):

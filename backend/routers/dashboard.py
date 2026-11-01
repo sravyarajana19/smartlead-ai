@@ -45,13 +45,38 @@ def get_dashboard_metrics(db: Session = Depends(get_db)):
     )
     terr_breakdown = {t: c for t, c in terr_counts}
 
-    # Monthly trends (sample aggregated by month)
+    # Real database aggregation by YYYY-MM
+    lead_by_month = dict(
+        db.query(func.strftime("%Y-%m", Lead.created_at), func.count(Lead.id))
+        .filter(Lead.created_at.isnot(None))
+        .group_by(func.strftime("%Y-%m", Lead.created_at))
+        .all()
+    )
+
+    opp_by_month = dict(
+        db.query(func.strftime("%Y-%m", Opportunity.creation_date), func.count(Opportunity.id))
+        .filter(Opportunity.creation_date.isnot(None))
+        .group_by(func.strftime("%Y-%m", Opportunity.creation_date))
+        .all()
+    )
+
+    won_by_month = dict(
+        db.query(func.strftime("%Y-%m", Opportunity.actual_close_date), func.count(Opportunity.id))
+        .filter(Opportunity.current_stage == "Won", Opportunity.actual_close_date.isnot(None))
+        .group_by(func.strftime("%Y-%m", Opportunity.actual_close_date))
+        .all()
+    )
+
+    all_months = sorted(set(lead_by_month.keys()) | set(opp_by_month.keys()) | set(won_by_month.keys()))
     monthly_trends = [
-        {"month": "2025-01", "leads": int(total_leads * 0.08), "opps": int(total_opps * 0.07), "won": int(won_opps * 0.06)},
-        {"month": "2025-04", "leads": int(total_leads * 0.18), "opps": int(total_opps * 0.17), "won": int(won_opps * 0.16)},
-        {"month": "2025-07", "leads": int(total_leads * 0.32), "opps": int(total_opps * 0.31), "won": int(won_opps * 0.30)},
-        {"month": "2025-10", "leads": int(total_leads * 0.28), "opps": int(total_opps * 0.29), "won": int(won_opps * 0.31)},
-        {"month": "2026-01", "leads": int(total_leads * 0.14), "opps": int(total_opps * 0.16), "won": int(won_opps * 0.17)},
+        {
+            "month": m,
+            "leads": lead_by_month.get(m, 0),
+            "opps": opp_by_month.get(m, 0),
+            "won": won_by_month.get(m, 0),
+        }
+        for m in all_months
+        if m is not None
     ]
 
     return {

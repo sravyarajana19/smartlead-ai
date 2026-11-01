@@ -24,6 +24,13 @@ class LeadScoringEngine:
         engagement_weight: float = DEFAULT_ENGAGEMENT_WEIGHT,
         rule_version: str = "v1.0.0",
     ):
+        import math
+        for name, w in [("fit_weight", fit_weight), ("intent_weight", intent_weight), ("engagement_weight", engagement_weight)]:
+            if not isinstance(w, (int, float)) or math.isnan(w) or math.isinf(w):
+                raise ValueError(f"{name} must be a finite number. Got {w}")
+            if w < 0.0 or w > 1.0:
+                raise ValueError(f"{name} must be between 0.0 and 1.0. Got {w}")
+
         # Validate weights sum to 1.0 (with slight tolerance)
         total_w = fit_weight + intent_weight + engagement_weight
         if abs(total_w - 1.0) > 0.001:

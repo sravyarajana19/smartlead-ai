@@ -1,5 +1,5 @@
 from datetime import datetime, date
-from typing import List, Optional, Any, Dict
+from typing import List, Optional, Any, Dict, Literal
 from pydantic import BaseModel, Field, EmailStr
 
 
@@ -237,7 +237,7 @@ class OpportunityCreate(BaseModel):
 
 
 class StageTransitionRequest(BaseModel):
-    new_stage: str
+    new_stage: Literal["New", "Qualified", "Proposal", "Negotiation", "Won", "Lost"]
     changed_by: Optional[str] = "Sales Agent"
     won_lost_reason: Optional[str] = None
     notes: Optional[str] = None

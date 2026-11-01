@@ -42,6 +42,9 @@ class AnomalyInjector:
 
         return self.data, self.anomalies
 
+    # Backward compatibility alias
+    inject_all = inject_all_cases
+
     def inject_case_1_consent_violations(self, count: int = 5):
         """
         CASE 1: Opted-out lead is contacted.

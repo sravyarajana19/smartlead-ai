@@ -22,7 +22,8 @@ from generator.id_generator import (
     generate_consent_history_id,
 )
 from backend.services.scoring_service import LeadScoringEngine
-from backend.services.dedup_service import normalize_phone
+from backend.services.dedup_service import normalize_phone, DeduplicationService
+from backend.services.routing_service import SalesRoutingEngine
 
 
 def get_dataset_scale_config(scale: str = "small") -> Dict[str, int]:
@@ -384,44 +385,62 @@ class SyntheticDataGenerator:
                 filter_post_conversion=True,
             )
 
-            # Assign Representative deterministically matching territory and product
-            matching_reps = [
-                r for r in self.sales_reps
-                if r["territory"] == territory and r["is_active"]
-            ]
-            assigned_rep_id = None
-            if matching_reps:
-                # Find matching product specialist or fallback
-                spec_reps = [r for r in matching_reps if r["product_specialization"] == product_interest]
-                chosen_rep = spec_reps[0] if spec_reps else matching_reps[0]
-                assigned_rep_id = chosen_rep["id"]
-                chosen_rep["current_load"] += 1
+            # Assign Representative deterministically using SalesRoutingEngine
+            assigned_rep, r_status, r_explanation = SalesRoutingEngine.route_lead(
+                lead_territory=territory,
+                product_interest=product_interest,
+                available_reps=self.sales_reps,
+            )
+            assigned_rep_id = assigned_rep["id"] if assigned_rep else None
+            if assigned_rep:
+                assigned_rep["current_load"] = assigned_rep.get("current_load", 0) + 1
 
             # Determine lifecycle status based on score
             score = eval_res["lead_score"]
             if score >= 75:
-                status = random.choices(["Qualified", "Converted", "Working"], weights=[0.50, 0.35, 0.15])[0]
+                status = random.choices(["Qualified", "Working", "Contacted"], weights=[0.60, 0.25, 0.15])[0]
             elif score >= 50:
                 status = random.choices(["Working", "Contacted", "Qualified"], weights=[0.50, 0.35, 0.15])[0]
             else:
                 status = random.choices(["New", "Contacted", "Unqualified"], weights=[0.40, 0.40, 0.20])[0]
 
-            is_converted = (status == "Converted")
-            converted_date = (created_at + timedelta(days=random.randint(10, 45))) if is_converted else None
+            is_converted = False
+            converted_date = None
 
             # Generate duplicate flag for a small subset (~3%)
             is_duplicate = False
             canonical_lead_id = None
             if i > 50 and i % 30 == 0:
                 is_duplicate = True
-                canonical_lead_id = generate_lead_id(i - 25)
+                target_idx = max(0, i - 26)
+                target_lead = self.leads[target_idx]
+                canonical_lead_id = target_lead["id"]
+                # Reuse target lead's contact and company for genuine identity match
+                contact = next((c for c in self.contacts if c["id"] == target_lead["contact_id"]), contact)
+                company = next((co for co in self.companies if co["id"] == target_lead["company_id"]), company)
+                territory = company["territory"]
+
+                # Derive relationship using DeduplicationService
+                match_meta = DeduplicationService.compare_leads(
+                    existing_lead=target_lead,
+                    new_lead={"product_interest": product_interest, "created_at": created_at},
+                    existing_contact=contact,
+                    new_contact=contact,
+                    existing_company=company,
+                    new_company=company,
+                ) or {
+                    "match_type": "Exact",
+                    "match_reason": f"Exact match on contact email {contact['email']}",
+                    "similarity_score": 1.0,
+                }
+
                 self.duplicate_relationships.append({
                     "id": generate_duplicate_id(len(self.duplicate_relationships) + 1),
                     "primary_lead_id": canonical_lead_id,
                     "duplicate_lead_id": lead_id,
-                    "match_type": "Exact",
-                    "match_reason": f"Exact match on contact email {contact['email']}",
-                    "similarity_score": 1.0,
+                    "match_type": match_meta.get("match_type", "Exact"),
+                    "match_reason": match_meta.get("match_reason", f"Exact match on email: {contact['email']}"),
+                    "similarity_score": match_meta.get("similarity_score", 1.0),
                     "status": "Detected",
                     "detected_at": created_at,
                 })
@@ -487,16 +506,18 @@ class SyntheticDataGenerator:
     def generate_opportunities_and_stages(self):
         """Generates opportunities and complete StageHistory sequences."""
         target_opp_count = self.config["num_opportunities"]
-        # Select qualified/converted leads first, then high priority
+        # Filter eligible leads: skip duplicate leads to avoid duplicate opportunity anomalies in baseline
         eligible_leads = [
             l for l in self.leads
-            if l["is_converted"] or l["status"] in {"Qualified", "Working"} or l["lead_score"] >= 65
+            if not l.get("is_duplicate", False) and (l["status"] in {"Qualified", "Working"} or l["lead_score"] >= 65)
         ]
 
         if len(eligible_leads) < target_opp_count:
-            eligible_leads = self.leads
+            eligible_leads = [l for l in self.leads if not l.get("is_duplicate", False)]
 
         opp_idx = 1
+        converted_lead_ids = set()
+
         for lead in eligible_leads:
             if opp_idx > target_opp_count:
                 break
@@ -517,18 +538,19 @@ class SyntheticDataGenerator:
                 stage = random.choices(["Lost", "Qualified", "New"], weights=[0.60, 0.25, 0.15])[0]
 
             won_lost_reason = None
-            actual_close = None
             if stage == "Won":
-                actual_close = expected_close - timedelta(days=random.randint(1, 15))
                 won_lost_reason = random.choice([
                     "Superior Product Fit", "Executive Champion Alignment",
                     "Strong ROI Proof of Concept", "Competitive Feature Superiority"
                 ])
             elif stage == "Lost":
-                actual_close = expected_close - timedelta(days=random.randint(1, 10))
                 won_lost_reason = random.choice([
                     "Budget Freeze", "Competitor Selected", "No Immediate Need", "Timing Postponed"
                 ])
+
+            # Generate Stage History progression and get exact final transition date
+            final_trans_date = self._generate_stage_history_for_opp(opp_id, creation_date, stage)
+            actual_close = final_trans_date if stage in {"Won", "Lost"} else None
 
             self.opportunities.append({
                 "id": opp_id,
@@ -545,15 +567,26 @@ class SyntheticDataGenerator:
                 "won_lost_reason": won_lost_reason,
                 "is_duplicate": False,
                 "created_at": creation_date,
-                "updated_at": actual_close if actual_close else creation_date,
+                "updated_at": actual_close if actual_close else final_trans_date,
             })
 
-            # Generate Stage History progression
-            self._generate_stage_history_for_opp(opp_id, creation_date, stage, actual_close)
+            # Reconcile lead conversion status with opportunity
+            lead["is_converted"] = True
+            lead["converted_date"] = creation_date
+            lead["status"] = "Converted"
+            converted_lead_ids.add(lead["id"])
             opp_idx += 1
 
-    def _generate_stage_history_for_opp(self, opp_id: str, start_date: datetime, final_stage: str, close_date: Optional[datetime]):
-        """Generates standard, valid sequential stage history entries."""
+        # Reconcile remaining leads that did not convert into opportunities
+        for l in self.leads:
+            if l["id"] not in converted_lead_ids:
+                l["is_converted"] = False
+                l["converted_date"] = None
+                if l["status"] == "Converted":
+                    l["status"] = "Qualified"
+
+    def _generate_stage_history_for_opp(self, opp_id: str, start_date: datetime, final_stage: str) -> datetime:
+        """Generates standard, valid sequential stage history entries and returns final transition date."""
         stage_sequence = ["New"]
         if final_stage == "New":
             pass
@@ -588,6 +621,7 @@ class SyntheticDataGenerator:
                 "notes": f"Progressed from {from_s} to {to_s}",
                 "created_at": cur_date,
             })
+        return cur_date
 
     def generate_tasks(self):
         """Generates follow-up tasks adhering to consent status and priorities."""
@@ -598,8 +632,8 @@ class SyntheticDataGenerator:
             lead_id = lead["id"]
             consent = consent_map.get(lead_id)
 
-            # Strict rule: DO NOT create contact tasks for opted-out leads
-            if consent and consent["consent_status"] == "Opt-Out":
+            # Strict rule: DO NOT create contact tasks for opted-out or pending leads (only Opt-In)
+            if not consent or consent["consent_status"] != "Opt-In":
                 continue
 
             # Prioritize High and Medium leads
@@ -610,6 +644,9 @@ class SyntheticDataGenerator:
                 task_priority = "Urgent" if lead["priority"] == "High" else "Normal"
                 due_date = lead["created_at"] + timedelta(days=2 if task_priority == "Urgent" else 5)
 
+                t_status = random.choice(["Completed", "Pending", "In Progress"])
+                comp_at = (due_date + timedelta(hours=random.randint(1, 24))) if t_status == "Completed" else None
+
                 self.tasks.append({
                     "id": task_id,
                     "lead_id": lead_id,
@@ -617,10 +654,10 @@ class SyntheticDataGenerator:
                     "task_type": task_type,
                     "priority": task_priority,
                     "due_date": due_date,
-                    "status": random.choice(["Completed", "Pending", "In Progress"]),
+                    "status": t_status,
                     "blocked_reason": None,
                     "is_consent_verified": True,
                     "created_at": lead["created_at"],
-                    "completed_at": (due_date + timedelta(hours=3)) if random.random() < 0.6 else None,
+                    "completed_at": comp_at,
                 })
                 task_seq += 1

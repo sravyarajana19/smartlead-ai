@@ -25,12 +25,18 @@ class MLDatasetBuilder:
         company_map = {c["id"]: c for c in companies}
         contact_map = {c["id"]: c for c in contacts}
 
-        # Count pre-conversion activities per lead
+        lead_conv_map = {l["id"]: l.get("converted_date") for l in leads}
+        # Count strictly pre-conversion activities per lead
         activity_counts = {}
         for a in activities:
-            if not a.get("is_post_conversion", False):
-                lid = a["lead_id"]
-                activity_counts[lid] = activity_counts.get(lid, 0) + 1
+            lid = a.get("lead_id")
+            conv_d = lead_conv_map.get(lid)
+            act_d = a.get("activity_date")
+            if conv_d and act_d and act_d > conv_d:
+                continue
+            if a.get("is_post_conversion", False):
+                continue
+            activity_counts[lid] = activity_counts.get(lid, 0) + 1
 
         rows = []
         for l in leads:
@@ -57,8 +63,8 @@ class MLDatasetBuilder:
                 "product_interest": l.get("product_interest", "Cloud Platform"),
                 "lead_source": l.get("lead_source", "Website"),
                 "industry": comp.get("industry", "Technology"),
-                # TARGET OUTCOME LABEL (0 or 1)
-                "converted": 1 if l.get("is_converted", False) or l.get("status") in {"Converted", "Qualified"} else 0,
+                # TARGET OUTCOME LABEL (0 or 1: strictly true conversions)
+                "converted": 1 if l.get("is_converted", False) else 0,
             }
             rows.append(row)
 

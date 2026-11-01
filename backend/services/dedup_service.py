@@ -102,6 +102,9 @@ class DeduplicationService:
         lead_id: str,
         is_lead_duplicate: bool,
         existing_opportunities: List[Dict[str, Any]],
+        company_id: Optional[str] = None,
+        product_interest: Optional[str] = None,
+        canonical_lead_id: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
         """
         CASE 4 Detection:
@@ -112,12 +115,23 @@ class DeduplicationService:
             return None
 
         for opp in existing_opportunities:
-            # Check if canonical lead or company matches
-            if opp.get("current_stage") not in {"Won", "Lost"}:
-                return {
-                    "is_duplicate_opportunity": True,
-                    "canonical_opp_id": opp.get("id"),
-                    "issue_type": "CASE_4_DUPLICATE_OPPORTUNITY",
-                    "explanation": f"Lead {lead_id} is marked as duplicate and created duplicate opportunity matching active opportunity {opp.get('id')}",
-                }
+            if opp.get("current_stage") in {"Won", "Lost"}:
+                continue
+
+            opp_company = opp.get("company_id")
+            opp_lead = opp.get("lead_id")
+
+            # When company or canonical lead scope is provided, strictly enforce match
+            if company_id is not None or canonical_lead_id is not None:
+                matches_company = (company_id is not None and opp_company == company_id)
+                matches_canonical = (canonical_lead_id is not None and opp_lead == canonical_lead_id)
+                if not (matches_company or matches_canonical):
+                    continue
+
+            return {
+                "is_duplicate_opportunity": True,
+                "canonical_opp_id": opp.get("id"),
+                "issue_type": "CASE_4_DUPLICATE_OPPORTUNITY",
+                "explanation": f"Lead {lead_id} is marked as duplicate and created duplicate opportunity matching active opportunity {opp.get('id')}",
+            }
         return None

@@ -76,27 +76,36 @@ def transition_opportunity_stage(
     from_stage = opp.current_stage
     to_stage = request.new_stage
 
+    # 1. Reject transitions from terminal states
+    if from_stage in {"Won", "Lost"}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot transition opportunity {opp_id}: stage '{from_stage}' is terminal and immutable.",
+        )
+
+    # 2. Require won_lost_reason when transitioning to Won or Lost
+    if to_stage in {"Won", "Lost"} and not (request.won_lost_reason and request.won_lost_reason.strip()):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"A non-empty won_lost_reason is mandatory when closing an opportunity as '{to_stage}'.",
+        )
+
+    # 3. Validate state machine transition flow
     is_valid, validation_msg = OpportunityManagementService.validate_transition(from_stage, to_stage)
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=validation_msg or f"Invalid stage transition: '{from_stage}' -> '{to_stage}'.",
+        )
 
     now = datetime.utcnow()
     hist_count = db.query(StageHistory).filter(StageHistory.opportunity_id == opp_id).count()
     hist_id = generate_stage_history_id(opp_id, hist_count + 1)
 
-    # Check for Case 5 Anomaly (e.g. direct jump New -> Won)
-    if not is_valid and to_stage == "Won":
-        anm_count = db.query(AnomalyRecord).count()
-        anom = AnomalyRecord(
-            id=generate_anomaly_id(anm_count + 1),
-            entity_type="StageHistory",
-            entity_id=opp_id,
-            issue_type="CASE_5_MISSING_STAGE_TRANSITION",
-            severity="High",
-            ground_truth_label="MISSING_STAGE_TRANSITIONS",
-            expected_decision="REJECT_INVALID_TRANSITION",
-            actual_decision="SKIPPED_INTERMEDIATE_STAGES",
-            explanation=f"Opportunity {opp_id} leaped directly from '{from_stage}' to '{to_stage}'.",
-        )
-        db.add(anom)
+    # Calculate stage duration
+    duration = 0
+    if opp.updated_at:
+        duration = max(0, (now - opp.updated_at).days)
 
     # Record stage history
     history_entry = StageHistory(
@@ -104,11 +113,11 @@ def transition_opportunity_stage(
         opportunity_id=opp_id,
         from_stage=from_stage,
         to_stage=to_stage,
-        stage_duration_days=max(1, (now - opp.updated_at).days) if opp.updated_at else 1,
+        stage_duration_days=duration,
         transition_date=now,
         changed_by=request.changed_by or "Sales Agent",
-        is_valid_transition=is_valid,
-        notes=request.notes or (validation_msg if not is_valid else f"Moved to {to_stage}"),
+        is_valid_transition=True,
+        notes=request.notes or f"Moved from {from_stage} to {to_stage}",
         created_at=now,
     )
     db.add(history_entry)
@@ -118,7 +127,7 @@ def transition_opportunity_stage(
     opp.updated_at = now
     if to_stage in {"Won", "Lost"}:
         opp.actual_close_date = now
-        opp.won_lost_reason = request.won_lost_reason
+        opp.won_lost_reason = request.won_lost_reason.strip()
 
     db.commit()
     db.refresh(opp)

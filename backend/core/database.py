@@ -85,7 +85,7 @@ def ensure_database_initialized():
             gen = SyntheticDataGenerator(scale="small")
             data = gen.generate_all()
             injector = AnomalyInjector(data)
-            data, anomalies = injector.inject_all()
+            data, anomalies = injector.inject_all_cases()
             populate_database(data, anomalies)
             print("[Auto-Init] Database populated via synthetic generator fallback.")
 
