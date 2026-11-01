@@ -2,7 +2,7 @@
 
 **Execution Timestamp**: "1793388301.8261774"  
 **Overall Validation Status**: `VALIDATED_WITH_LABELLED_ANOMALIES`  
-**Total Records Checked**: 49,275  
+**Total Records Checked**: 124,786  
 **Passed Automated Checks**: 9  
 **Failed Data Integrity Checks**: 0  
 **Detected Exception Scenarios (Labelled Anomalies)**: 50  
@@ -43,10 +43,10 @@ The SmartLead AI Validation Engine automatically verifies relational integrity, 
 | Component and Lead Score 0-100 Range Check | Automated engine rule | **PASSED** | Verified |
 | Lifecycle Date Ordering (Created <= Converted) | Automated engine rule | **PASSED** | Verified |
 | CASE 1: Consent Enforcement (Opt-Out Contact Detection) | Automated engine rule | **ANOMALY_DETECTED** | Flagged as privacy consent violations in ground truth and exception logs. |
-| CASE 2: Temporal Leakage Detection (Post-Conversion Activities) | Automated engine rule | **ANOMALY_DETECTED** | Flagged as temporal leakage; excluded from valid scoring pipeline. |
+| CASE 2: Temporal Leakage Detection (Post-Conversion Activities) | Automated engine rule | **ANOMALY_DETECTED** | Flagged as temporal leakage; derived independently from activity and conversion timestamps. |
 | CASE 3: Territory Sales Routing Validation | Automated engine rule | **ANOMALY_DETECTED** | Reported expected vs actual territory in routing anomaly log. |
-| CASE 4: Duplicate Opportunity Creation Detection | Automated engine rule | **ANOMALY_DETECTED** | Preserved both canonical and duplicate opportunities for investigation. |
-| CASE 5: Opportunity Stage History Lifecycle Transition Integrity | Automated engine rule | **ANOMALY_DETECTED** | Detected invalid or missing stage transitions in lifecycle history. |
+| CASE 4: Duplicate Opportunity Creation Detection | Automated engine rule | **ANOMALY_DETECTED** | Preserved both canonical and duplicate opportunities; derived from canonical identity links. |
+| CASE 5: Opportunity Stage History Lifecycle Transition Integrity | Automated engine rule | **ANOMALY_DETECTED** | Detected invalid, skipped, or broken stage transitions; derived from chain continuity. |
 | Conversion Funnel Mathematical Reconciliation | Automated engine rule | **PASSED** | Verified |
 
 ---

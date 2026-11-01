@@ -115,10 +115,11 @@ class LeadScoringEngine:
         activities: List[Dict[str, Any]],
         converted_date: Optional[datetime] = None,
         filter_post_conversion: bool = True,
+        reference_date: Optional[datetime] = None,
     ) -> Tuple[float, Dict[str, Any], bool]:
         """
         Calculate Buying Intent score (0-100).
-        Protects against temporal leakage: ignores activities after converted_date.
+        Protects against temporal leakage: ignores activities after converted_date or reference_date.
         Returns: (intent_score, breakdown, leakage_detected)
         """
         breakdown = {
@@ -146,13 +147,18 @@ class LeadScoringEngine:
             act_type = act.get("activity_type", "")
             is_post = act.get("is_post_conversion", False)
 
+            if isinstance(act_date, str):
+                try:
+                    act_date = datetime.fromisoformat(act_date)
+                except Exception:
+                    pass
+
+            # Exclude future activities after scoring cutoff
+            if reference_date and isinstance(act_date, datetime) and act_date > reference_date:
+                continue
+
             # Check for temporal leakage
             if converted_date and act_date:
-                if isinstance(act_date, str):
-                    try:
-                        act_date = datetime.fromisoformat(act_date)
-                    except Exception:
-                        pass
                 if isinstance(act_date, datetime) and act_date > converted_date:
                     leakage_detected = True
                     if filter_post_conversion:
@@ -209,12 +215,17 @@ class LeadScoringEngine:
         for act in activities:
             act_date = act.get("activity_date")
             is_post = act.get("is_post_conversion", False)
+            if isinstance(act_date, str):
+                try:
+                    act_date = datetime.fromisoformat(act_date)
+                except Exception:
+                    pass
+
+            # Exclude future activities beyond scoring cutoff
+            if reference_date and isinstance(act_date, datetime) and act_date > reference_date:
+                continue
+
             if converted_date and act_date:
-                if isinstance(act_date, str):
-                    try:
-                        act_date = datetime.fromisoformat(act_date)
-                    except Exception:
-                        pass
                 if isinstance(act_date, datetime) and act_date > converted_date:
                     leakage_detected = True
                     if filter_post_conversion:
@@ -342,16 +353,19 @@ class LeadScoringEngine:
             seniority_level=contact_data.get("seniority_level", ""),
         )
 
+        ref_date = lead_data.get("reference_date", datetime.utcnow())
+
         intent_score, intent_details, intent_leakage = self.calculate_intent_score(
             lead_source=lead_data.get("lead_source", ""),
             activities=activities,
             converted_date=converted_date,
             filter_post_conversion=filter_post_conversion,
+            reference_date=ref_date,
         )
 
         eng_score, eng_details, eng_leakage = self.calculate_engagement_score(
             activities=activities,
-            reference_date=lead_data.get("reference_date", datetime.utcnow()),
+            reference_date=ref_date,
             converted_date=converted_date,
             filter_post_conversion=filter_post_conversion,
         )

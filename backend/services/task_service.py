@@ -30,18 +30,22 @@ class TaskManagementService:
         if not rep_id:
             return None, f"Cannot create task for lead {lead_id}: No sales representative assigned.", None
 
-        # 1. CONSENT ENFORCEMENT CHECK
+        determined_type = task_type or ("Discovery Call" if lead_priority == "High" else "Email Outreach")
+        outreach_channel = "Phone" if any(w in determined_type.lower() for w in ["call", "phone", "discovery"]) else ("Email" if "email" in determined_type.lower() else None)
+
+        # 1. CONSENT ENFORCEMENT CHECK (with outreach channel scoping)
         is_permitted, refusal_reason = ConsentEnforcementService.verify_consent_for_outreach(
             lead_id=lead_id,
             consent_record=consent_record,
             lead_score=lead_score,
+            channel=outreach_channel,
         )
 
         # Check for Case 1 Anomaly
         case1_anomaly = None
         if consent_record and consent_record.get("consent_status") == "Opt-Out":
             case1_anomaly = ConsentEnforcementService.detect_case_1_consent_violation(
-                task_data={"lead_id": lead_id, "task_type": task_type or "Outreach Call"},
+                task_data={"lead_id": lead_id, "task_type": determined_type},
                 consent_record=consent_record,
             )
 
@@ -49,7 +53,6 @@ class TaskManagementService:
             return None, refusal_reason, case1_anomaly
 
         # 2. TASK DEDUPLICATION CHECK
-        determined_type = task_type or ("Discovery Call" if lead_priority == "High" else "Email Outreach")
         for task in existing_tasks:
             if (
                 task.get("lead_id") == lead_id

@@ -321,17 +321,35 @@ class ValidationEngine:
             res["check_details"].append({"check": "CASE 4: Duplicate Opportunities", "status": "PASSED"})
 
     def _check_case_5_stage_history(self, res: Dict[str, Any]):
-        # Case 5: Missing stage transitions (derived from allowed state machine transitions)
+        # Case 5: Missing or broken stage transitions (gap and continuity detection)
         from backend.services.opportunity_service import ALLOWED_TRANSITIONS
-        all_histories = self.db.query(StageHistory).all()
+        all_histories = (
+            self.db.query(StageHistory)
+            .order_by(StageHistory.opportunity_id, StageHistory.transition_date.asc())
+            .all()
+        )
         res["total_records_checked"] += len(all_histories)
 
-        fact_invalid_ids = []
+        hist_by_opp = {}
         for h in all_histories:
-            allowed = ALLOWED_TRANSITIONS.get(h.from_stage, [])
-            if h.to_stage not in allowed or h.is_valid_transition is False:
-                fact_invalid_ids.append(h.id)
+            hist_by_opp.setdefault(h.opportunity_id, []).append(h)
 
+        fact_invalid_ids = []
+        for opp_id, chain in hist_by_opp.items():
+            for i, h in enumerate(chain):
+                # 1. Individual legal transition check
+                allowed = ALLOWED_TRANSITIONS.get(h.from_stage, [])
+                if h.to_stage not in allowed or h.is_valid_transition is False:
+                    fact_invalid_ids.append(h.id)
+
+                # 2. Chain continuity check: h[i].to_stage must equal h[i+1].from_stage
+                if i + 1 < len(chain):
+                    next_h = chain[i + 1]
+                    if h.to_stage != next_h.from_stage:
+                        # Gap detected in transition sequence!
+                        fact_invalid_ids.append(next_h.id)
+
+        fact_invalid_ids = sorted(list(set(fact_invalid_ids)))
         if fact_invalid_ids:
             count = len(fact_invalid_ids)
             res["detected_anomalies"] += count
@@ -341,7 +359,7 @@ class ValidationEngine:
                 "status": "ANOMALY_DETECTED",
                 "detected_count": count,
                 "sample_entity_ids": fact_invalid_ids[:5],
-                "action": "Detected invalid or missing stage transitions; derived from state machine flow rules.",
+                "action": "Detected invalid, skipped, or broken stage transitions; derived from chain continuity.",
             })
         else:
             res["passed_checks"] += 1

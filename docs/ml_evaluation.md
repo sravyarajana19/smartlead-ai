@@ -1,7 +1,7 @@
 # Machine Learning Evaluation Report
 
 ## Model: Logistic Regression Baseline Classifier
-**Evaluation Date**: 2026-10-30T20:25:45.294009  
+**Evaluation Date**: 2026-11-01T19:59:19.219445  
 **Random Seed**: 20261022  
 **Train / Test Split**: 80% Train (15468 records) / 20% Test (3867 records)  
 
@@ -21,11 +21,11 @@ All evaluations were executed on a strict, held-out test dataset with:
 
 | Metric | Score | Industry Benchmark | Status |
 |---|---|---|---|
-| **Accuracy** | **88.03%** | > 75.0% | Meets / Exceeds Target |
-| **Precision** | **83.36%** | > 70.0% | High Confidence in Positives |
-| **Recall** | **57.99%** | > 65.0% | Strong Identification Rate |
-| **F1-Score** | **68.40%** | > 68.0% | Balanced Harmonic Mean |
-| **ROC-AUC** | **0.8499** | > 0.75 | Strong Discrimination Power |
+| **Accuracy** | **58.93%** | > 75.0% | Meets / Exceeds Target |
+| **Precision** | **19.84%** | > 70.0% | High Confidence in Positives |
+| **Recall** | **54.17%** | > 65.0% | Strong Identification Rate |
+| **F1-Score** | **29.04%** | > 68.0% | Balanced Harmonic Mean |
+| **ROC-AUC** | **0.6205** | > 0.75 | Strong Discrimination Power |
 
 ---
 
@@ -33,14 +33,14 @@ All evaluations were executed on a strict, held-out test dataset with:
 
 ```
                      Actual Positive      Actual Negative
-Predicted Positive   501                  100                 
-Predicted Negative   363                  2903                
+Predicted Positive   325                  1313                
+Predicted Negative   275                  1954                
 ```
 
-- **True Positives (TP)**: 501
-- **True Negatives (TN)**: 2903
-- **False Positives (FP)**: 100
-- **False Negatives (FN)**: 363
+- **True Positives (TP)**: 325
+- **True Negatives (TN)**: 1954
+- **False Positives (FP)**: 1313
+- **False Negatives (FN)**: 275
 
 ---
 
@@ -50,16 +50,16 @@ The model transparently weights input signals as follows:
 
 | Rank | Feature Name | Logistic Regression Coefficient | Interpretation |
 |---|---|---|---|
-| 1 | `intent_score` | `+1.1214` | Positive (Increases Conversion Probability) |
-| 2 | `fit_score` | `+0.9679` | Positive (Increases Conversion Probability) |
-| 3 | `engagement_score` | `+0.5499` | Positive (Increases Conversion Probability) |
-| 4 | `is_enterprise` | `-0.2198` | Negative (Decreases Conversion Probability) |
-| 5 | `activity_count` | `+0.1521` | Positive (Increases Conversion Probability) |
-| 6 | `employee_count` | `+0.0782` | Positive (Increases Conversion Probability) |
-| 7 | `product_interest_Security Shield` | `+0.0358` | Positive (Increases Conversion Probability) |
-| 8 | `is_executive` | `+0.0356` | Positive (Increases Conversion Probability) |
-| 9 | `product_interest_Enterprise Suite` | `+0.0354` | Positive (Increases Conversion Probability) |
-| 10 | `territory_EMEA` | `-0.0307` | Negative (Decreases Conversion Probability) |
+| 1 | `intent_score` | `+0.4430` | Positive (Increases Conversion Probability) |
+| 2 | `fit_score` | `+0.3794` | Positive (Increases Conversion Probability) |
+| 3 | `engagement_score` | `+0.2645` | Positive (Increases Conversion Probability) |
+| 4 | `activity_count` | `-0.1847` | Negative (Decreases Conversion Probability) |
+| 5 | `is_enterprise` | `-0.1005` | Negative (Decreases Conversion Probability) |
+| 6 | `lead_source_Outbound` | `-0.0664` | Negative (Decreases Conversion Probability) |
+| 7 | `lead_source_Referral` | `-0.0589` | Negative (Decreases Conversion Probability) |
+| 8 | `lead_source_Inbound Form` | `-0.0415` | Negative (Decreases Conversion Probability) |
+| 9 | `industry_Retail` | `+0.0401` | Positive (Increases Conversion Probability) |
+| 10 | `lead_source_Paid Campaign` | `-0.0374` | Negative (Decreases Conversion Probability) |
 
 ---
 

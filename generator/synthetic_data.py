@@ -193,6 +193,18 @@ class SyntheticDataGenerator:
             product = VALID_PRODUCTS[(i - 1) % len(VALID_PRODUCTS)]
             name = rep_names[(i - 1) % len(rep_names)] if i <= len(rep_names) else f"{self.fake.first_name()} {self.fake.last_name()}"
             clean_name = name.lower().replace(' ', '.').replace("'", "")
+            if self.scale == "full":
+                if territory == "North America":
+                    cap = random.choice([1200, 1300, 1400, 1500])
+                elif territory == "EMEA":
+                    cap = random.choice([850, 950, 1050, 1150])
+                elif territory == "APAC":
+                    cap = random.choice([450, 550, 650])
+                else:
+                    cap = random.choice([350, 450, 550])
+            else:
+                cap = random.choice([40, 50, 60, 75])
+
             self.sales_reps.append({
                 "id": generate_sales_rep_id(i),
                 "name": name,
@@ -200,7 +212,7 @@ class SyntheticDataGenerator:
                 "territory": territory,
                 "product_specialization": product,
                 "is_active": True if i % 15 != 0 else False,  # 93% active
-                "capacity": random.choice([40, 50, 60, 75]),
+                "capacity": cap,
                 "current_load": 0,  # Will be calculated dynamically
                 "created_at": datetime(2025, 1, 15, 8, 30, 0),
                 "updated_at": datetime(2025, 1, 15, 8, 30, 0),
@@ -326,12 +338,25 @@ class SyntheticDataGenerator:
         act_counter = 1
 
         for i in range(1, count + 1):
-            contact_idx = (i - 1) % contacts_count
-            contact = self.contacts[contact_idx]
-            # Lookup parent company
-            company_id = contact["company_id"]
-            company_idx = int(company_id.split("-")[1]) - 1
-            company = self.companies[company_idx]
+            # 1. Resolve Contact and Company upfront (handling genuine duplicate linking)
+            is_duplicate = False
+            canonical_lead_id = None
+            target_lead = None
+
+            if i > 50 and i % 30 == 0 and len(self.leads) >= 26:
+                target_idx = i - 26
+                target_lead = self.leads[target_idx]
+                canonical_lead_id = target_lead["id"]
+                # Reuse target lead's contact and company for genuine identity match
+                contact = next(c for c in self.contacts if c["id"] == target_lead["contact_id"])
+                company = next(co for co in self.companies if co["id"] == target_lead["company_id"])
+                is_duplicate = True
+            else:
+                contact_idx = (i - 1) % contacts_count
+                contact = self.contacts[contact_idx]
+                company_id = contact["company_id"]
+                company_idx = int(company_id.split("-")[1]) - 1
+                company = self.companies[company_idx]
 
             lead_id = generate_lead_id(i)
             lead_source = random.choices(lead_sources, weights=source_weights)[0]
@@ -342,11 +367,38 @@ class SyntheticDataGenerator:
             if i % 3 != 0 and campaigns_count > 0:
                 campaign_id = self.campaigns[(i - 1) % campaigns_count]["id"]
 
+            # Ensure lead creation is strictly >= contact creation
             created_at = contact["created_at"] + timedelta(days=random.randint(1, 45), hours=random.randint(1, 12))
+            scoring_as_of = created_at + timedelta(days=7)
 
-            # Simulate activities for this lead prior to scoring
+            # Record duplicate relationship if duplicate
+            if is_duplicate and target_lead:
+                match_meta = DeduplicationService.compare_leads(
+                    existing_lead=target_lead,
+                    new_lead={"product_interest": product_interest, "created_at": created_at},
+                    existing_contact=contact,
+                    new_contact=contact,
+                    existing_company=company,
+                    new_company=company,
+                ) or {
+                    "match_type": "Exact",
+                    "match_reason": f"Exact match on contact email {contact['email']}",
+                    "similarity_score": 1.0,
+                }
+                self.duplicate_relationships.append({
+                    "id": generate_duplicate_id(len(self.duplicate_relationships) + 1),
+                    "primary_lead_id": canonical_lead_id,
+                    "duplicate_lead_id": lead_id,
+                    "match_type": match_meta.get("match_type", "Exact"),
+                    "match_reason": match_meta.get("match_reason", f"Exact match on email: {contact['email']}"),
+                    "similarity_score": match_meta.get("similarity_score", 1.0),
+                    "status": "Detected",
+                    "detected_at": created_at,
+                })
+
+            # Simulate activities strictly within initial engagement window prior to conversion
             lead_activities = []
-            num_activities = random.choices([1, 2, 3, 4, 6, 8, 12], weights=[0.15, 0.20, 0.25, 0.20, 0.10, 0.07, 0.03])[0]
+            num_activities = random.choices([1, 2, 3, 4, 6, 8], weights=[0.20, 0.25, 0.25, 0.15, 0.10, 0.05])[0]
 
             act_types = ["Page View", "Pricing View", "Whitepaper Download", "Webinar Attend", "Demo Request", "Email Open", "Email Click"]
             act_weights = [0.30, 0.15, 0.15, 0.10, 0.10, 0.12, 0.08]
@@ -356,7 +408,8 @@ class SyntheticDataGenerator:
                 act_type = random.choices(act_types, weights=act_weights)[0]
                 channel = "Web" if "Page" in act_type or "Pricing" in act_type else ("Email" if "Email" in act_type else "Event")
 
-                act_time = created_at + timedelta(days=random.randint(0, 30), hours=random.randint(1, 10))
+                # Activity occurs within 0 to 4 days of lead creation (pre-conversion)
+                act_time = created_at + timedelta(days=random.randint(0, 4), hours=random.randint(1, 10))
 
                 activity_dict = {
                     "id": act_id,
@@ -374,12 +427,12 @@ class SyntheticDataGenerator:
                 self.activities.append(activity_dict)
                 act_counter += 1
 
-            # Compute Lead Score deterministically
+            # Compute Lead Score deterministically from final parents and strictly causal activities
             eval_res = self.scoring_engine.evaluate_lead_full(
                 lead_id=lead_id,
                 company_data=company,
                 contact_data=contact,
-                lead_data={"lead_source": lead_source, "reference_date": datetime(2026, 1, 15)},
+                lead_data={"lead_source": lead_source, "reference_date": scoring_as_of},
                 activities=lead_activities,
                 converted_date=None,
                 filter_post_conversion=True,
@@ -391,6 +444,21 @@ class SyntheticDataGenerator:
                 product_interest=product_interest,
                 available_reps=self.sales_reps,
             )
+            # If all specialists are full, ensure rep is assigned strictly within the same territory
+            if not assigned_rep:
+                territory_reps = [
+                    r for r in self.sales_reps
+                    if r["territory"] == territory and r["is_active"] and r.get("current_load", 0) < r.get("capacity", 50)
+                ]
+                if territory_reps:
+                    assigned_rep = min(territory_reps, key=lambda r: (r.get("current_load", 0), r["id"]))
+                else:
+                    active_reps = [r for r in self.sales_reps if r["territory"] == territory and r["is_active"]]
+                    if active_reps:
+                        assigned_rep = min(active_reps, key=lambda r: (r.get("current_load", 0), r["id"]))
+                        if assigned_rep["current_load"] >= assigned_rep["capacity"]:
+                            assigned_rep["capacity"] = assigned_rep["current_load"] + 50
+
             assigned_rep_id = assigned_rep["id"] if assigned_rep else None
             if assigned_rep:
                 assigned_rep["current_load"] = assigned_rep.get("current_load", 0) + 1
@@ -403,47 +471,6 @@ class SyntheticDataGenerator:
                 status = random.choices(["Working", "Contacted", "Qualified"], weights=[0.50, 0.35, 0.15])[0]
             else:
                 status = random.choices(["New", "Contacted", "Unqualified"], weights=[0.40, 0.40, 0.20])[0]
-
-            is_converted = False
-            converted_date = None
-
-            # Generate duplicate flag for a small subset (~3%)
-            is_duplicate = False
-            canonical_lead_id = None
-            if i > 50 and i % 30 == 0:
-                is_duplicate = True
-                target_idx = max(0, i - 26)
-                target_lead = self.leads[target_idx]
-                canonical_lead_id = target_lead["id"]
-                # Reuse target lead's contact and company for genuine identity match
-                contact = next((c for c in self.contacts if c["id"] == target_lead["contact_id"]), contact)
-                company = next((co for co in self.companies if co["id"] == target_lead["company_id"]), company)
-                territory = company["territory"]
-
-                # Derive relationship using DeduplicationService
-                match_meta = DeduplicationService.compare_leads(
-                    existing_lead=target_lead,
-                    new_lead={"product_interest": product_interest, "created_at": created_at},
-                    existing_contact=contact,
-                    new_contact=contact,
-                    existing_company=company,
-                    new_company=company,
-                ) or {
-                    "match_type": "Exact",
-                    "match_reason": f"Exact match on contact email {contact['email']}",
-                    "similarity_score": 1.0,
-                }
-
-                self.duplicate_relationships.append({
-                    "id": generate_duplicate_id(len(self.duplicate_relationships) + 1),
-                    "primary_lead_id": canonical_lead_id,
-                    "duplicate_lead_id": lead_id,
-                    "match_type": match_meta.get("match_type", "Exact"),
-                    "match_reason": match_meta.get("match_reason", f"Exact match on email: {contact['email']}"),
-                    "similarity_score": match_meta.get("similarity_score", 1.0),
-                    "status": "Detected",
-                    "detected_at": created_at,
-                })
 
             self.leads.append({
                 "id": lead_id,
@@ -462,10 +489,10 @@ class SyntheticDataGenerator:
                 "lead_score": score,
                 "priority": eval_res["priority"],
                 "is_duplicate": is_duplicate,
-                "is_converted": is_converted,
-                "converted_date": converted_date,
+                "is_converted": False,
+                "converted_date": None,
                 "created_at": created_at,
-                "updated_at": converted_date if converted_date else created_at,
+                "updated_at": created_at,
             })
 
     def generate_consents(self):
@@ -524,7 +551,7 @@ class SyntheticDataGenerator:
 
             opp_id = generate_opportunity_id(opp_idx)
             val = round(random.uniform(15000, 250000), 2)
-            creation_date = lead["created_at"] + timedelta(days=random.randint(5, 20))
+            creation_date = lead["created_at"] + timedelta(days=random.randint(7, 25))
             expected_close = creation_date + timedelta(days=random.randint(30, 90))
 
             # Determine stage outcome
@@ -552,11 +579,17 @@ class SyntheticDataGenerator:
             final_trans_date = self._generate_stage_history_for_opp(opp_id, creation_date, stage)
             actual_close = final_trans_date if stage in {"Won", "Lost"} else None
 
+            # Ensure rep territory strictly matches lead territory
+            rep_id = lead["assigned_rep_id"]
+            if not rep_id:
+                territory_reps = [r for r in self.sales_reps if r["territory"] == lead["territory"] and r["is_active"]]
+                rep_id = territory_reps[0]["id"] if territory_reps else self.sales_reps[0]["id"]
+
             self.opportunities.append({
                 "id": opp_id,
                 "lead_id": lead["id"],
                 "company_id": lead["company_id"],
-                "assigned_rep_id": lead["assigned_rep_id"] or self.sales_reps[0]["id"],
+                "assigned_rep_id": rep_id,
                 "canonical_opp_id": None,
                 "opportunity_value": val,
                 "currency": "USD",
@@ -647,10 +680,16 @@ class SyntheticDataGenerator:
                 t_status = random.choice(["Completed", "Pending", "In Progress"])
                 comp_at = (due_date + timedelta(hours=random.randint(1, 24))) if t_status == "Completed" else None
 
+                # Ensure task assigned rep strictly matches lead territory
+                t_rep_id = lead["assigned_rep_id"]
+                if not t_rep_id:
+                    territory_reps = [r for r in self.sales_reps if r["territory"] == lead["territory"] and r["is_active"]]
+                    t_rep_id = territory_reps[0]["id"] if territory_reps else self.sales_reps[0]["id"]
+
                 self.tasks.append({
                     "id": task_id,
                     "lead_id": lead_id,
-                    "assigned_rep_id": lead["assigned_rep_id"] or self.sales_reps[0]["id"],
+                    "assigned_rep_id": t_rep_id,
                     "task_type": task_type,
                     "priority": task_priority,
                     "due_date": due_date,

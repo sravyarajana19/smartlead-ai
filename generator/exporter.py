@@ -83,7 +83,6 @@ class DataExporter:
                 json.dump(self.anomalies, f, indent=2, default=json_serializer)
         elif anom_path.exists():
             anom_path.unlink()
-                json.dump(self.anomalies, f, indent=2, default=json_serializer)
 
     def export_sql(self):
         """Generates SQL INSERT seed script."""

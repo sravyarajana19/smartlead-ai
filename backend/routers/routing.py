@@ -14,6 +14,20 @@ def route_lead_endpoint(request: RoutingRequest, db: Session = Depends(get_db)):
     if not lead:
         raise HTTPException(status_code=404, detail=f"Lead {request.lead_id} not found")
 
+    # If lead already has a valid assignment in its territory, preserve it idempotently
+    if lead.assigned_rep_id:
+        existing_rep = db.query(SalesRep).filter(SalesRep.id == lead.assigned_rep_id).first()
+        if existing_rep and existing_rep.is_active and existing_rep.territory == lead.territory:
+            return {
+                "lead_id": lead.id,
+                "assigned_rep_id": existing_rep.id,
+                "rep_name": existing_rep.name,
+                "territory": lead.territory,
+                "product_interest": lead.product_interest,
+                "routing_status": "Assigned",
+                "message": f"Lead {lead.id} is already assigned to {existing_rep.name} ({existing_rep.id}) in {lead.territory}.",
+            }
+
     reps = db.query(SalesRep).all()
     # Materialize independent plain dicts so ORM expiration on commit does not clear attributes
     rep_dicts = [

@@ -35,7 +35,7 @@ class MLEvaluationPipeline:
         ML_DIR.mkdir(parents=True, exist_ok=True)
         DOCS_DIR.mkdir(parents=True, exist_ok=True)
         self.scaler = StandardScaler()
-        self.model = LogisticRegression(max_iter=1000, random_state=RANDOM_SEED)
+        self.model = LogisticRegression(max_iter=1000, random_state=RANDOM_SEED, class_weight="balanced")
         self.feature_names = []
         self.metrics: Dict[str, Any] = {}
 

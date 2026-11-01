@@ -98,9 +98,13 @@ def test_h01_routing_endpoint_response_and_idempotency(db_session):
     if resp["assigned_rep_id"]:
         assert resp["rep_name"] is not None
 
-    # Test idempotency: re-running routing for same lead does not double-count global load
+    # Test idempotency: re-running routing for same lead preserves exact representative and does not oscillate
+    resp2 = route_lead_endpoint(req, db=db_session)
+    assert resp2["assigned_rep_id"] == resp["assigned_rep_id"]
+
     total_load_before = sum(r.current_load for r in db_session.query(SalesRep).all())
-    route_lead_endpoint(req, db=db_session)
+    resp3 = route_lead_endpoint(req, db=db_session)
+    assert resp3["assigned_rep_id"] == resp["assigned_rep_id"]
     total_load_after = sum(r.current_load for r in db_session.query(SalesRep).all())
     assert total_load_after == total_load_before
 
@@ -212,4 +216,103 @@ def test_h03_opt_out_task_creation_returns_403_not_500(db_session):
 
     assert exc_info.value.status_code == 403
     assert "LEGAL CONSENT VIOLATION" in exc_info.value.detail
+
+
+def test_p04_task_creation_channel_scoping(db_session):
+    """P0-04: Test that attempting phone outreach for an Email-only Opt-In lead is rejected."""
+    lead = db_session.query(Lead).first()
+    consent = db_session.query(Consent).filter(Consent.lead_id == lead.id).first()
+    original_type = consent.consent_type
+    original_status = consent.consent_status
+    original_opt_out = consent.opt_out_timestamp
+    consent.consent_status = "Opt-In"
+    consent.consent_type = "Email"
+    consent.opt_out_timestamp = None
+    db_session.commit()
+
+    try:
+        task_in = TaskCreate(
+            lead_id=lead.id,
+            task_type="Discovery Call",  # Phone channel
+            priority="Urgent",
+        )
+        with pytest.raises(HTTPException) as exc_info:
+            create_follow_up_task(task_in, db=db_session)
+        assert exc_info.value.status_code in {400, 403}
+        assert "does not authorize 'Phone'" in exc_info.value.detail
+    finally:
+        consent.consent_type = original_type
+        consent.consent_status = original_status
+        consent.opt_out_timestamp = original_opt_out
+        db_session.commit()
+
+
+def test_p07_stage_history_gap_detection(db_session):
+    """P0-07: Test that a gap in the stage transition history chain is detected by validation."""
+    from backend.services.validation_service import ValidationEngine
+    from backend.models.entities import Opportunity, StageHistory
+    
+    # Use existing opportunity context to satisfy foreign key constraints
+    existing_opp = db_session.query(Opportunity).first()
+    assert existing_opp is not None, "Opportunity needed for test"
+
+    test_opp_id = "OPP-TEST-GAP"
+    test_opp = Opportunity(
+        id=test_opp_id,
+        lead_id=existing_opp.lead_id,
+        company_id=existing_opp.company_id,
+        assigned_rep_id=existing_opp.assigned_rep_id,
+        opportunity_value=50000.0,
+        current_stage="Negotiation",
+        expected_close_date=datetime.utcnow() + timedelta(days=30),
+    )
+    db_session.add(test_opp)
+    
+    # Insert a broken chain for testing gap detection
+    h1 = StageHistory(
+        id="SH-TEST-1",
+        opportunity_id=test_opp_id,
+        from_stage=None,
+        to_stage="New",
+        transition_date=datetime.utcnow(),
+        is_valid_transition=True,
+    )
+    h2 = StageHistory(
+        id="SH-TEST-2",
+        opportunity_id=test_opp_id,
+        from_stage="New",
+        to_stage="Qualified",
+        transition_date=datetime.utcnow() + timedelta(days=2),
+        is_valid_transition=True,
+    )
+    # GAP: skips Proposal, jumps directly from Negotiation
+    h3 = StageHistory(
+        id="SH-TEST-3",
+        opportunity_id=test_opp_id,
+        from_stage="Proposal",
+        to_stage="Negotiation",
+        transition_date=datetime.utcnow() + timedelta(days=5),
+        is_valid_transition=True,
+    )
+    db_session.add_all([h1, h2, h3])
+    db_session.commit()
+
+    try:
+        engine = ValidationEngine(db_session)
+        res = {
+            "total_records_checked": 0,
+            "detected_anomalies": 0,
+            "case_breakdown": {},
+            "check_details": [],
+            "passed_checks": 0,
+            "failed_checks": 0,
+        }
+        engine._check_case_5_stage_history(res)
+        assert res["detected_anomalies"] > 0
+        assert "SH-TEST-3" in res["case_breakdown"] or "CASE_5_MISSING_STAGE_TRANSITION" in res["case_breakdown"]
+    finally:
+        db_session.query(StageHistory).filter(StageHistory.opportunity_id == test_opp_id).delete()
+        db_session.query(Opportunity).filter(Opportunity.id == test_opp_id).delete()
+        db_session.commit()
+
 
