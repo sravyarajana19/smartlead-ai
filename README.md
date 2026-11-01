@@ -5,7 +5,7 @@
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.30+-FF4B4B.svg)](https://streamlit.io)
 [![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0+-D71F00.svg)](https://www.sqlalchemy.org/)
 [![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.3+-F7931E.svg)](https://scikit-learn.org/)
-[![Pytest](https://img.shields.io/badge/Tests-43%20Passed-brightgreen.svg)](https://pytest.org)
+[![Pytest](https://img.shields.io/badge/Tests-52%20Passed-brightgreen.svg)](https://pytest.org)
 
 **SMARTLEAD AI** is an intelligent, enterprise-grade lead scoring and sales operations platform engineered for technical evaluation as an **Associate AI Forward Deployed Engineer**. 
 
@@ -41,7 +41,7 @@ Built strictly with **free, local, and open-source** technologies:
 - **Frontend / Dashboard**: Streamlit, Plotly Express & Graph Objects.
 - **Data Engineering**: Pandas, NumPy, Faker.
 - **Machine Learning**: Scikit-learn (Logistic Regression, StandardScaler, Classification Metrics).
-- **Automated Testing**: Pytest (43 automated tests covering all modules).
+- **Automated Testing**: Pytest (52 automated tests covering all modules, regression checks, and business rules).
 - **Documentation**: Markdown, Mermaid Entity-Relationship Diagrams.
 
 ---
@@ -70,7 +70,7 @@ smartlead-ai/
 │   ├── app.py                # Landing hub & overview
 │   ├── components/           # High-speed data loaders & caches
 │   └── pages/                # 12 Operational pages
-├── tests/                    # Pytest Suite (43 tests, 100% pass)
+├── tests/                    # Pytest Suite (52 tests, 100% pass)
 ├── data/
 │   ├── exports/              # CSV, JSON, and SQL Seed data
 │   └── ground_truth/         # ground_truth.csv and ground_truth.json
@@ -99,19 +99,24 @@ All entities feature deterministic, zero-padded, immutable IDs:
 ## 4. Installation & Setup Instructions
 
 ### Step 1: Clone or Navigate to the Repository
-Open Windows PowerShell:
-```powershell
-cd C:\Users\sravy\.gemini\antigravity\scratch\smartlead-ai
+```bash
+git clone https://github.com/sravyarajana19/smartlead-ai.git
+cd smartlead-ai
 ```
 
 ### Step 2: Virtual Environment Setup (Recommended)
-```powershell
+```bash
+# Windows
 python -m venv venv
 .\venv\Scripts\Activate.ps1
+
+# Linux / macOS
+python3 -m venv venv
+source venv/bin/activate
 ```
 
 ### Step 3: Install Dependencies
-```powershell
+```bash
 python -m pip install -r requirements.txt
 ```
 
@@ -226,41 +231,41 @@ Factual metrics recorded on the **full benchmark dataset (20,000 leads)**:
 - **Companies**: 5,000
 - **Contacts**: 10,000
 - **Leads**: 20,000
-- **Activities**: 72,957
+- **Activities**: 61,243
 - **Opportunities**: 3,010 (3,000 baseline + 10 duplicate opps)
-- **Stage Histories**: 11,196
-- **Tasks**: 14,245
+- **Stage Histories**: 11,183
+- **Tasks**: 14,258
 - **Consents**: 20,000
 - **Injected Anomaly Records**: 50 (10 per case)
-- **Generation & Export Runtime**: **22.64 seconds**
+- **Generation & Export Runtime**: **24.59 seconds**
 
 ### 8.2 Machine Learning Evaluation (Held-out 20% Test Split)
-- **Model**: Logistic Regression (Baseline Classifier)
-- **Accuracy**: **88.03%**
-- **Precision**: **83.36%**
-- **Recall**: **57.99%**
-- **F1-Score**: **68.40%**
-- **ROC-AUC**: **0.8499**
-- **Confusion Matrix**: `[[2903, 100], [363, 501]]` (TP=501, TN=2903, FP=100, FN=363)
+- **Model**: Logistic Regression (Baseline Classifier with Class Balancing)
+- **Accuracy**: **58.93%**
+- **Precision**: **19.84%**
+- **Recall**: **54.17%**
+- **F1-Score**: **29.04%**
+- **ROC-AUC**: **0.6205**
+- **Confusion Matrix**: `[[1954, 1313], [275, 325]]` (TP=325, TN=1954, FP=1313, FN=275)
 - **Top Predictive Features**:
-  1. `intent_score` (+1.1214)
-  2. `fit_score` (+0.9679)
-  3. `engagement_score` (+0.5499)
+  1. `intent_score` (+0.4430)
+  2. `fit_score` (+0.3794)
+  3. `engagement_score` (+0.2645)
 
 ### 8.3 Data Validation Engine Results
-- **Records Audited**: 49,275
+- **Records Audited**: 124,786
 - **Passed Checks**: 9
 - **Failed Checks**: 0 (Zero accidental data corruption)
-- **Labelled Anomalies Detected**: 50 (100% detection rate for Cases 1–5)
+- **Labelled Anomalies Detected**: 50 (100% detection rate for Cases 1–5; 10 per case)
 - **Status**: `VALIDATED_WITH_LABELLED_ANOMALIES`
 
 ### 8.4 Deterministic Reproducibility
-- **Run 1 Digest**: `fc0a93f886a8f8c5e8fcc53aba66d5683904299aca7325d1554721265555a08c`
-- **Run 2 Digest**: `fc0a93f886a8f8c5e8fcc53aba66d5683904299aca7325d1554721265555a08c`
+- **Run 1 Digest**: `f239207fea89ce3e10bdf0775e75c68b75d80975f046b02aa695888149781526`
+- **Run 2 Digest**: `f239207fea89ce3e10bdf0775e75c68b75d80975f046b02aa695888149781526`
 - **Match Status**: **MATCH (100% BITWISE IDENTICAL)**
 
 ### 8.5 Automated Test Suite
-- **Pytest Results**: **43 passed in 13.92s** (0 failures, 100% pass rate).
+- **Pytest Results**: **52 passed in 16.37s** (0 failures, 100% pass rate).
 
 ---
 
