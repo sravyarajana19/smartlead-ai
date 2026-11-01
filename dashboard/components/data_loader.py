@@ -2,15 +2,25 @@ import sqlite3
 import pandas as pd
 from pathlib import Path
 from backend.core.config import DATABASE_PATH
+from backend.core.database import ensure_database_initialized
+
+try:
+    import streamlit as st
+    cache_decorator = st.cache_data(show_spinner="Loading operational dataset...")
+except Exception:
+    def cache_decorator(func):
+        return func
 
 
 def get_db_connection():
     """Returns raw SQLite connection for high performance read queries."""
+    ensure_database_initialized()
     return sqlite3.connect(DATABASE_PATH)
 
 
 def load_table(table_name: str) -> pd.DataFrame:
     """Reads table into Pandas DataFrame."""
+    ensure_database_initialized()
     conn = get_db_connection()
     try:
         df = pd.read_sql(f"SELECT * FROM {table_name}", conn)
@@ -19,8 +29,10 @@ def load_table(table_name: str) -> pd.DataFrame:
         conn.close()
 
 
+@cache_decorator
 def load_all_dashboard_data():
     """Loads all core entities for dashboard consumption."""
+    ensure_database_initialized()
     conn = get_db_connection()
     try:
         leads = pd.read_sql("SELECT * FROM leads", conn)
@@ -50,3 +62,4 @@ def load_all_dashboard_data():
         }
     finally:
         conn.close()
+

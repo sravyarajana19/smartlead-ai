@@ -4,8 +4,10 @@ import streamlit as st
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
-from backend.core.database import SessionLocal
+from backend.core.database import SessionLocal, ensure_database_initialized
 from backend.services.validation_service import ValidationEngine
+
+ensure_database_initialized()
 
 st.set_page_config(page_title="Data Quality & Validation - SMARTLEAD AI", page_icon="✅", layout="wide")
 st.title("✅ Automated Data Quality & Validation Engine")
